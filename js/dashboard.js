@@ -10,9 +10,8 @@
   const db=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
   (async()=>{
     const {data:{session}}=await db.auth.getSession();if(!session){location.replace("/");return;}
-    const {data:p,error}=await db.from("profiles").select("id,full_name,role,is_active,must_change_password,recruiter_id").eq("id",session.user.id).single();
+    const {data:p,error}=await db.from("profiles").select("id,full_name,role,is_active,recruiter_id").eq("id",session.user.id).single();
     if(error||!p||!p.is_active){await db.auth.signOut();location.replace("/");return;}
-    if(p.must_change_password){location.replace("/change-password.html");return;}
     const role=p.role;document.getElementById("greeting").textContent="Welcome back, "+(p.full_name||"there");document.getElementById("role-label").textContent=role.replace("_"," ").toUpperCase()+" PORTAL";
     const menus=role==="super_admin"?["Dashboard","User management","Candidates","Facilities","Recruiters","Paystubs","Login activity","Audit logs","Profile"]:role==="admin"?["Dashboard","User management","Candidates","Facilities","Recruiters","Paystubs","Profile"]:["Dashboard","My facilities","My paystubs","Profile"];
     nav.innerHTML=menus.map((m,i)=>`<a href="#" class="${i===0?"active":""}" data-menu="${m}"><span class="nav-icon">${icon[m]||"•"}</span>${m}</a>`).join("");
