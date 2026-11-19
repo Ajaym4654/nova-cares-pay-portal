@@ -3,7 +3,7 @@
   const root = document.getElementById("main-content");
   const nav = document.getElementById("navigation");
   const clientReady = cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && window.supabase;
-  const icon = {Dashboard:"⌂",Candidates:"♙",Facilities:"▦",Paystubs:"▤",Recruiters:"♧","Login activity":"◷","Audit logs":"◫",Profile:"◎"};
+  const icon = {"User management":"♙",Dashboard:"⌂",Candidates:"♙",Facilities:"▦",Paystubs:"▤",Recruiters:"♧","Login activity":"◷","Audit logs":"◫",Profile:"◎"};
   const setStats = (items) => document.getElementById("stats").innerHTML = items.map(x => `<article class="stat-card"><div class="stat-top"><span>${x.label}</span><span class="stat-icon">${x.icon}</span></div><div class="stat-value">${x.value}</div><div class="stat-note">${x.note}</div></article>`).join("");
   const empty = (title, text) => root.innerHTML = `<div class="empty-state"><div class="empty-icon">▤</div><b>${title}</b><p>${text}</p></div>`;
   document.getElementById("today").textContent = new Intl.DateTimeFormat(undefined,{weekday:"short",month:"short",day:"numeric",year:"numeric"}).format(new Date());
@@ -25,7 +25,7 @@
     const role=p.role;
     document.getElementById("greeting").textContent="Welcome back, "+(p.full_name||"there");
     document.getElementById("role-label").textContent=role.replace("_"," ").toUpperCase()+" PORTAL";
-    const menus=role==="super_admin"?["Dashboard","Candidates","Facilities","Recruiters","Paystubs","Login activity","Audit logs","Profile"]:role==="admin"?["Dashboard","Candidates","Facilities","Recruiters","Paystubs","Profile"]:["Dashboard","My facilities","My paystubs","Profile"];
+    const menus=role==="super_admin"?["Dashboard","User management","Candidates","Facilities","Recruiters","Paystubs","Login activity","Audit logs","Profile"]:role==="admin"?["Dashboard","Candidates","Facilities","Recruiters","Paystubs","Profile"]:["Dashboard","My facilities","My paystubs","Profile"];
     nav.innerHTML=menus.map((m,i)=>`<a href="#" class="${i===0?"active":""}" data-menu="${m}"><span class="nav-icon">${icon[m]||"•"}</span>${m}</a>`).join("");
     document.getElementById("section-title").textContent=role==="nurse"?"My facilities":"Portal overview";
     document.getElementById("section-subtitle").textContent=role==="nurse"?"Facilities and weekly pay documents assigned to you.":"Manage your Nova Cares portal from one place.";
@@ -43,7 +43,7 @@
     }else{
       empty("Your management workspace is ready","Candidate, facility, recruiter and document management modules are being connected in the next development milestone.");
     }
-    nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();nav.querySelectorAll("a").forEach(n=>n.classList.remove("active"));a.classList.add("active");document.getElementById("section-title").textContent=a.dataset.menu;empty(a.dataset.menu+" module","This section will be enabled as its management workflow is implemented.");}));
+    nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();if(a.dataset.menu==="User management"&&role==="super_admin"){location.href="/users.html";return;}nav.querySelectorAll("a").forEach(n=>n.classList.remove("active"));a.classList.add("active");document.getElementById("section-title").textContent=a.dataset.menu;empty(a.dataset.menu+" module","This section will be enabled as its management workflow is implemented.");}));
   })().catch(e=>{root.innerHTML='<div class="error-box">'+(e.message||"Unable to load portal data.")+'</div>';});
   document.getElementById("logout").addEventListener("click",async()=>{await db.auth.signOut();location.replace("/");});
 })();
