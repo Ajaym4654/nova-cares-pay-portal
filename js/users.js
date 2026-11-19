@@ -41,8 +41,18 @@
     const values=Object.fromEntries(new FormData(form).entries());
     try{
       const {data,error}=await db.functions.invoke("admin-create-user",{body:values});
-      if(error)throw new Error(data?.error||error.message||"Unable to create account.");
-      if(data?.error)throw new Error(data.error);
+      if(error){
+        let detail=data?.details||data?.error||error.message||"Unable to create account.";
+        try{
+          const response=error.context;
+          if(response&&typeof response.json==="function"){
+            const payload=await response.clone().json();
+            detail=payload.details||payload.error||detail;
+          }
+        }catch(_){}
+        throw new Error(detail);
+      }
+      if(data?.error)throw new Error(data.details||data.error);
       close();show(data?.message||"Account created successfully. No invitation email was sent.");await loadUsers();
     }catch(error){show(error.message||"Unable to create account.","error");}
     finally{submit.disabled=false;submit.textContent="Create account";}
