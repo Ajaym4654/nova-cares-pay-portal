@@ -1,6 +1,6 @@
 (() => {
 const cfg=window.NOVA_CONFIG||{},notice=document.getElementById("notice"),form=document.getElementById("upload-form"),nurseSelect=document.getElementById("nurse"),facilitySelect=document.getElementById("facility"),fileInput=document.getElementById("paystub-file"),uploadButton=document.getElementById("upload-button");
-let db,actor,nurses=[],assignments=[];
+let db,actor,nurses=[],assignments=[],facilities=[];
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const show=(message,type="success")=>{notice.textContent=message;notice.className="user-alert show "+type;};
 const hide=()=>{notice.textContent="";notice.className="user-alert";};
@@ -14,20 +14,21 @@ list.innerHTML=data.map(r=>'<article class="recent-item"><strong>'+esc(r.profile
 list.querySelectorAll("button[data-path]").forEach(btn=>btn.addEventListener("click",async()=>{btn.disabled=true;try{const {data,error}=await db.storage.from("paystubs").createSignedUrl(btn.dataset.path,60);if(error)throw error;window.open(data.signedUrl,"_blank","noopener");}catch(e){show(e.message,"error");}finally{btn.disabled=false;}}));
 }
 async function loadNurses(){
-const [{data:people,error:peopleError},{data:links,error:linksError}]=await Promise.all([
+const [{data:people,error:peopleError},{data:links,error:linksError},{data:places,error:placesError}]=await Promise.all([
 db.from("profiles").select("id,full_name,email").eq("role","nurse").eq("is_active",true).order("full_name"),
-db.from("candidate_facilities").select("candidate_id,facility_id,facilities(id,name,city,state)")
+db.from("candidate_facilities").select("candidate_id,facility_id"),
+db.from("facilities").select("id,name,city,state").eq("is_active",true).order("name")
 ]);
-if(peopleError)throw peopleError;if(linksError)throw linksError;
-nurses=people||[];assignments=links||[];
+if(peopleError)throw peopleError;if(linksError)throw linksError;if(placesError)throw placesError;
+nurses=people||[];assignments=links||[];facilities=places||[];
 setOptions(nurseSelect,nurses.map(n=>({value:n.id,label:n.full_name+" · "+(n.email||"")})),"Choose a nurse");
 if(!nurses.length)nurseSelect.innerHTML='<option value="">No active nurse accounts found</option>';
 }
 nurseSelect.addEventListener("change",()=>{
-const nurseId=nurseSelect.value,links=assignments.filter(a=>a.candidate_id===nurseId&&a.facilities);
-setOptions(facilitySelect,links.map(a=>({value:a.facility_id,label:a.facilities.name+" · "+[a.facilities.city,a.facilities.state].filter(Boolean).join(", ")})),"Choose assigned facility");
-facilitySelect.disabled=!links.length;
-if(nurseId&&!links.length)show("This nurse has no facility assigned yet. Assign a facility before uploading a paystub.","error");else hide();
+const nurseId=nurseSelect.value,assigned=new Set(assignments.filter(a=>a.candidate_id===nurseId).map(a=>a.facility_id));
+setOptions(facilitySelect,facilities.map(f=>({value:f.id,label:f.name+" · "+[f.city,f.state].filter(Boolean).join(", ")+(assigned.has(f.id)?" · Assigned":" · Will be assigned")})),"Choose facility");
+facilitySelect.disabled=!nurseId||!facilities.length;
+if(nurseId&&!facilities.length)show("No active facilities exist yet. Add a facility before uploading paystubs.","error");else hide();
 });
 form.addEventListener("submit",async e=>{
 e.preventDefault();hide();
@@ -40,6 +41,9 @@ const weekLabel=start+" to "+end,periodStart=start,periodEnd=end;
 uploadButton.disabled=true;uploadButton.textContent="Uploading securely…";
 let storagePath=null;
 try{
+const {data:assignment,error:assignmentError}=await db.from("candidate_facilities").select("candidate_id").eq("candidate_id",nurseId).eq("facility_id",facilityId).maybeSingle();
+if(assignmentError)throw assignmentError;
+if(!assignment){const {error:assignError}=await db.from("candidate_facilities").insert({candidate_id:nurseId,facility_id:facilityId});if(assignError)throw assignError;}
 const {data:existingPeriod,error:periodCheckError}=await db.from("pay_periods").select("id").eq("candidate_id",nurseId).eq("facility_id",facilityId).eq("week_label",weekLabel).maybeSingle();
 if(periodCheckError)throw periodCheckError;
 let periodId=existingPeriod?.id;
