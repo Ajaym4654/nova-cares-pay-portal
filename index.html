@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#142b45">
+  <meta name="description" content="Secure employee payroll and document portal for Nova Cares Staffing LLC.">
+  <title>Sign in | Nova Cares Pay Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="login-shell">
+    <section class="brand-panel" aria-label="Nova Cares introduction">
+      <div class="brand-top">
+        <div class="brand-mark"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 34S5 25.4 5 14.8C5 6.7 15.1 3.8 20 11.1 24.9 3.8 35 6.7 35 14.8 35 25.4 20 34 20 34Z" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M10.5 20h6l3-6 4.1 12 3-6h3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div><div class="brand-name">NOVA CARES</div><div class="brand-sub">STAFFING LLC</div></div>
+      </div>
+      <div class="brand-copy">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> EMPLOYEE PORTAL</span>
+        <h1>Your work.<br><span>Your pay.</span><br>All in one place.</h1>
+        <p>A secure, simple place to access your weekly pay statements and important employment documents.</p>
+      </div>
+      <div class="trust-card">
+        <div class="trust-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.4c0 4.7 3.2 8.3 7.5 9.6 4.3-1.3 7.5-4.9 7.5-9.6V6L12 3Z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m8.5 12 2.2 2.2 4.8-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div><strong>Your documents stay private</strong><span>Access is limited to your authorized account.</span></div>
+      </div>
+      <div class="brand-footer">NOVA CARES REALLY CARES <span>•</span> © <span id="year"></span> Nova Cares Staffing LLC</div>
+    </section>
+    <section class="form-panel">
+      <div class="form-wrap">
+        <div class="mobile-brand"><div class="brand-mark"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 34S5 25.4 5 14.8C5 6.7 15.1 3.8 20 11.1 24.9 3.8 35 6.7 35 14.8 35 25.4 20 34 20 34Z" fill="none" stroke="currentColor" stroke-width="2.6"/></svg></div><strong>NOVA CARES</strong></div>
+        <div class="form-heading"><span class="welcome-label">WELCOME BACK</span><h2>Sign in to your account</h2><p>Enter the login credentials provided by your Nova Cares administrator.</p></div>
+        <form id="login-form" novalidate>
+          <label for="email">Email address</label>
+          <div class="input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg><input id="email" name="email" type="email" autocomplete="username" placeholder="you@example.com" required></div>
+          <div class="label-row"><label for="password">Password</label><button class="text-button" type="button" id="forgot-link">Forgot password?</button></div>
+          <div class="input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required><button class="eye-button" type="button" id="toggle-password" aria-label="Show password"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.7"/></svg></button></div>
+          <div class="form-options"><label class="check-label"><input type="checkbox" id="remember"><span class="check-ui"></span>Remember me</label><span class="secure-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.4c0 4.7 3.2 8.3 7.5 9.6 4.3-1.3 7.5-4.9 7.5-9.6V6L12 3Z"/></svg>Secure sign in</span></div>
+          <button class="submit-button" id="sign-in" type="submit"><span>Sign in securely</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+          <div class="message" id="login-message" role="status" aria-live="polite"></div>
+        </form>
+        <div class="help-card"><div class="help-icon">?</div><div><strong>Need help accessing your account?</strong><span>Contact your assigned Nova Cares recruiter or administrator.</span></div></div>
+        <p class="legal-note">By signing in, you agree to use this portal only for your authorized employment documents. <a href="https://novacarestaffing.com/" target="_blank" rel="noopener">Nova Cares website</a></p>
+      </div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script><script src="js/login.js"></script>
+</body></html>
