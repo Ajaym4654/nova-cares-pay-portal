@@ -35,22 +35,22 @@ Deno.serve(async (req) => {
     return reply({ error: "Authentication required." }, 401);
   }
 
-  // Verify the caller's Supabase session using the public anon key.
-  const userClient = createClient(supabaseUrl, anonKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
-
-  const { data: authData, error: authError } = await userClient.auth.getUser(token);
-  if (authError || !authData.user) {
-    console.error("Session verification failed:", authError?.message);
-    return reply({ error: "Your session is invalid or expired. Please sign in again." }, 401);
-  }
-
-  // Use the service-role client for the role check so profile RLS cannot block it.
+  // Use one trusted server-side client for token verification and the protected role lookup.
+  // Passing the user's JWT explicitly makes Auth verify the actual signed-in user session.
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+
+  const { data: authData, error: authError } = await adminClient.auth.getUser(token);
+  if (authError || !authData.user) {
+    console.error("Session verification failed:", {
+      message: authError?.message,
+      status: authError?.status,
+      tokenPresent: Boolean(token),
+      tokenLength: token.length,
+    });
+    return reply({ error: "Your session could not be verified. Please sign out and sign in again." }, 401);
+  }
 
   const { data: actor, error: actorError } = await adminClient
     .from("profiles")
