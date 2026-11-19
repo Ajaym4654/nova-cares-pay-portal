@@ -22,13 +22,21 @@
     nav.innerHTML=menus.map((m,i)=>'<a href="#" class="'+(i===0?"active":"")+'" data-menu="'+m+'"><span class="nav-icon">'+(icon[m]||"•")+'</span>'+m+'</a>').join("");
     document.getElementById("section-title").textContent=isNurse?"My facilities":"Portal overview";
     document.getElementById("section-subtitle").textContent=isNurse?"Facilities and weekly pay documents assigned to you.":"Manage your Nova Cares portal from one place.";
-    const [fac,cands,docs]=await Promise.all([
-      db.from("candidate_facilities").select("facility_id,facilities(name,city,state)").eq("candidate_id",p.id),
-      isNurse?Promise.resolve({count:0}):db.from("profiles").select("id",{count:"exact",head:true}).eq("role","nurse"),
-      db.from("paystub_documents").select("id",{count:"exact",head:true}).eq("candidate_id",p.id)
-    ]);
-    if(fac.error)throw fac.error;if(docs.error)throw docs.error;
-    setStats([{label:isNurse?"My facilities":"Nurse accounts",value:isNurse?(fac.data?.length??0):(cands.count??0),icon:"♙",note:isNurse?"Assigned to your profile":"Visible under your permissions"},{label:"My paystubs",value:docs.count??0,icon:"▤",note:"Available documents"},{label:"Account role",value:role==="super_admin"?"Super Admin":role==="admin"?"Admin":"Nurse",icon:"◈",note:"Access-controlled account"}]);
+    let facilityCount=0,paystubCount=0,nurseCount=0;
+    if(isNurse){
+      const [fac,docs]=await Promise.all([
+        db.from("candidate_facilities").select("facility_id").eq("candidate_id",p.id),
+        db.from("paystub_documents").select("id",{count:"exact",head:true}).eq("candidate_id",p.id)
+      ]);
+      if(fac.error)throw new Error("Unable to load your facility assignments: "+fac.error.message);
+      if(docs.error)throw new Error("Unable to load your paystub summary: "+docs.error.message);
+      facilityCount=fac.data?.length??0;paystubCount=docs.count??0;
+    }else{
+      const {count,error}=await db.from("profiles").select("id",{count:"exact",head:true}).eq("role","nurse");
+      if(error)throw new Error("Unable to load nurse account summary: "+error.message);
+      nurseCount=count??0;
+    }
+    setStats([{label:isNurse?"My facilities":"Nurse accounts",value:isNurse?facilityCount:nurseCount,icon:"♙",note:isNurse?"Assigned to your profile":"Visible under your permissions"},{label:"My paystubs",value:paystubCount,icon:"▤",note:"Available documents"},{label:"Account role",value:role==="super_admin"?"Super Admin":role==="admin"?"Admin":"Nurse",icon:"◈",note:"Access-controlled account"}]);
     async function renderFacilities(){
       document.getElementById("section-title").textContent="My facilities";document.getElementById("section-subtitle").textContent="Healthcare facilities assigned to your account.";
       root.innerHTML='<div class="loading">Loading your facilities…</div>';
