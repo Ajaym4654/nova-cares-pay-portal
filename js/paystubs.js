@@ -7,7 +7,10 @@ const hide=()=>{notice.textContent="";notice.className="user-alert";};
 const setOptions=(el,items,placeholder)=>{el.innerHTML='<option value="">'+placeholder+'</option>'+items.map(x=>'<option value="'+esc(x.value)+'">'+esc(x.label)+'</option>').join("");};
 const safeName=name=>name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g,"-").replace(/^-+|-+$/g,"").slice(-100)||"paystub.pdf";
 async function loadRecent(){
-const {data,error}=await db.from("paystub_documents").select("id,candidate_id,original_filename,storage_path,created_at,pay_periods(week_label,period_start,period_end),profiles:profiles!paystub_documents_candidate_id_fkey(full_name)").order("created_at",{ascending:false}).limit(12);
+const selectedNurseId=new URLSearchParams(location.search).get("nurse");
+let query=db.from("paystub_documents").select("id,candidate_id,original_filename,storage_path,created_at,pay_periods(week_label,period_start,period_end),profiles:profiles!paystub_documents_candidate_id_fkey(full_name)").order("created_at",{ascending:false});
+if(selectedNurseId)query=query.eq("candidate_id",selectedNurseId);
+const {data,error}=await query.limit(100);
 if(error)throw error;const list=document.getElementById("recent-list");
 if(!data?.length){list.innerHTML='<div class="recent-empty">No paystubs uploaded yet. Your uploaded weekly documents will appear here.</div>';return;}
 list.innerHTML=data.map(r=>'<article class="recent-item"><strong>'+esc(r.profiles?.full_name||"Nurse account")+' · '+esc(r.original_filename)+'</strong><span>'+esc(r.pay_periods?.week_label||"Pay period")+' · Uploaded '+new Date(r.created_at).toLocaleDateString()+'</span><button type="button" data-path="'+esc(r.storage_path)+'">Download PDF</button></article>').join("");
@@ -19,6 +22,8 @@ if(peopleError)throw peopleError;
 nurses=people||[];
 setOptions(nurseSelect,nurses.map(n=>({value:n.id,label:n.full_name+" · "+(n.email||"")})),"Choose a nurse");
 if(!nurses.length)nurseSelect.innerHTML='<option value="">No active nurse accounts found</option>';
+const selectedId=new URLSearchParams(location.search).get("nurse");
+if(selectedId){const selected=nurses.find(n=>n.id===selectedId);if(selected){nurseSelect.value=selectedId;document.querySelector(".history-card h2").textContent=selected.full_name+" · Paystubs";document.querySelector(".history-card .pay-card-head p").textContent="All uploaded pay documents for this nurse.";document.querySelector(".page-heading h1").textContent=selected.full_name+" · Paystubs";document.querySelector(".page-heading p").textContent="Review and download this nurse’s weekly pay documents.";}}
 }
 
 form.addEventListener("submit",async e=>{
