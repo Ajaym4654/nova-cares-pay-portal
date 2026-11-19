@@ -30,7 +30,7 @@ Deno.serve(async req=>{
   if(password.length<8||password.length>72)return reply({error:"Password must be between 8 and 72 characters."},400);
   const {data:created,error:createError}=await adminClient.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{full_name:fullName}});
   if(createError||!created.user){console.error("Auth user creation failed:",createError?.message);return reply({error:createError?.message||"Unable to create account."},400);}
-  const {error:profileError}=await adminClient.from("profiles").insert({id:created.user.id,login_id:email,email,full_name:fullName,phone:phone||null,role,is_active:true,must_change_password:true,created_by:authData.user.id});
+  const {error:profileError}=await adminClient.from("profiles").insert({id:created.user.id,login_id:email,email,full_name:fullName,phone:phone||null,role,is_active:true,must_change_password:false,created_by:authData.user.id});
   if(profileError){console.error("Profile insert failed; rolling back auth user:",profileError.message);const {error:rollbackError}=await adminClient.auth.admin.deleteUser(created.user.id);if(rollbackError)console.error("Auth rollback failed:",rollbackError.message);return reply({error:profileError.message},400);}
-  return reply({success:true,message:"Nurse / Employee account created successfully. No invitation email was sent."});
+  return reply({success:true,message:"Account created successfully. User can sign in immediately with the password you set."});
 });
