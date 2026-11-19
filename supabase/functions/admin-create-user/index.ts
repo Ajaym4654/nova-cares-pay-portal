@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     return reply({ error: "Server configuration is incomplete." }, 500);
   }
 
-  const token = (req.headers.get("Authorization") || "").replace(/^Bearer\\s+/i, "");
+  const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   if (!token) {
     return reply({ error: "Authentication required." }, 401);
   }
@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
   const phone = String(input.phone || "").trim();
   const role = input.role;
 
-  if (!fullName || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+  if (!fullName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return reply({ error: "Enter a valid full name and email address." }, 400);
   }
 
