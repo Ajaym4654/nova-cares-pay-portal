@@ -35,7 +35,7 @@ try{
 const {data:existingPeriod,error:periodCheckError}=await db.from("pay_periods").select("id").eq("candidate_id",nurseId).eq("week_label",weekLabel).maybeSingle();
 if(periodCheckError)throw periodCheckError;
 let periodId=existingPeriod?.id;
-if(periodId){const {data:existingDoc,error:docCheckError}=await db.from("paystub_documents").select("id").eq("pay_period_id",periodId).maybeSingle();if(docCheckError)throw docCheckError;if(existingDoc)throw new Error("A paystub is already uploaded for this nurse, facility, and week.");}
+if(periodId){const {data:existingDoc,error:docCheckError}=await db.from("paystub_documents").select("id").eq("pay_period_id",periodId).maybeSingle();if(docCheckError)throw docCheckError;if(existingDoc)throw new Error("A paystub is already uploaded for this nurse and week.");}
 else{const {data:newPeriod,error:newPeriodError}=await db.from("pay_periods").insert({candidate_id:nurseId,week_label:weekLabel,period_start:periodStart,period_end:periodEnd,pay_date:payDate||null,created_by:actor.id}).select("id").single();if(newPeriodError)throw newPeriodError;periodId=newPeriod.id;}
 const fileName=Date.now()+"-"+safeName(file.name);storagePath=nurseId+"/"+periodId+"/"+fileName;
 const {error:storageError}=await db.storage.from("paystubs").upload(storagePath,file,{contentType:"application/pdf",upsert:false});
