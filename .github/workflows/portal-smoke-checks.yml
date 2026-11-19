@@ -1,0 +1,55 @@
+name: Portal smoke checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: |
+          set -e
+          find js -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Verify local HTML assets and page links
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          root = Path('.')
+          errors = []
+
+          class Checker(HTMLParser):
+              def __init__(self, file):
+                  super().__init__()
+                  self.file = file
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  for key in ('src', 'href'):
+                      value = attrs.get(key)
+                      if not value or value.startswith(('#', 'https://', 'http://', 'mailto:', 'tel:', 'data:', 'javascript:')):
+                          continue
+                      path = urlsplit(value).path
+                      if not path:
+                          continue
+                      target = (root / path.lstrip('/')) if path.startswith('/') else (self.file.parent / path)
+                      if not target.exists():
+                          errors.append(f'{self.file}: missing {key}={value}')
+
+          for file in root.glob('*.html'):
+              parser = Checker(file)
+              parser.feed(file.read_text(encoding='utf-8'))
+          if errors:
+              print('\n'.join(errors))
+              raise SystemExit(1)
+          print('All local HTML assets and page links exist.')
+          PY
