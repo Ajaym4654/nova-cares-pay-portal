@@ -62,7 +62,7 @@
       try{
         if(name==="User management"&&(role==="super_admin"||role==="admin")){location.href="/users.html";return;}
         if(name==="My facilities"||name==="Facilities")return await renderFacilities();
-        if(name==="My paystubs"||name==="Paystubs")return isNurse?await renderPaystubs():empty("Paystubs","Paystub management will be available here.");
+        if(name==="Paystubs"&&(role==="admin"||role==="super_admin")){location.href="/paystubs.html";return;}if(name==="My paystubs"||name==="Paystubs")return isNurse?await renderPaystubs():empty("Paystubs","Paystub management is available to authorized administrators.");
         if(name==="Profile")return renderProfile();
         if(name==="Dashboard")return await renderDashboard();
         document.getElementById("section-title").textContent=name;empty(name+" module","This management workflow is not available yet.");
