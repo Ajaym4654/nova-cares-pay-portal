@@ -69,6 +69,6 @@ const {data:user,error}=await db.from("profiles").select("id,full_name,role,is_a
 if(error||!user?.is_active||!["admin","super_admin"].includes(user.role)){location.replace("/dashboard.html");return;}
 actor=user;document.getElementById("avatar").textContent=(user.full_name||"NC").split(" ").map(s=>s[0]).slice(0,2).join("").toUpperCase();
 await Promise.all([loadNurses(),loadRecent()]);
-})().catch(e=>show(e.message||"Unable to load paystub management.","error"));
+})().catch(e=>{show(e.message||"Unable to load paystub management.","error");document.getElementById("recent-list").innerHTML='<div class="recent-empty">Paystub data could not be loaded. Refresh the page and try again.</div>';});
 document.getElementById("logout").addEventListener("click",async()=>{if(db)await db.auth.signOut();location.replace("/");});
 })();
