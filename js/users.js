@@ -40,7 +40,16 @@
     submit.disabled=true;submit.textContent="Creating account…";
     const values=Object.fromEntries(new FormData(form).entries());
     try{
-      const {data,error}=await db.functions.invoke("admin-create-user",{body:values});
+      // Refresh the signed-in session and explicitly pass its fresh access token.
+      const {data: refreshed,error: refreshError}=await db.auth.refreshSession();
+      const freshSession=refreshed?.session;
+      if(refreshError||!freshSession?.access_token){
+        throw new Error("Your login session expired. Please sign out and sign in again.");
+      }
+      const {data,error}=await db.functions.invoke("admin-create-user",{
+        body:values,
+        headers:{Authorization:"Bearer "+freshSession.access_token}
+      });
       if(error){
         let detail=data?.details||data?.error||error.message||"Unable to create account.";
         try{
