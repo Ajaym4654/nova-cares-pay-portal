@@ -37,15 +37,15 @@
   form.addEventListener("submit",async e=>{
     e.preventDefault();hide();
     const submit=document.getElementById("submit-create");
-    submit.disabled=true;submit.textContent="Sending invitation…";
+    submit.disabled=true;submit.textContent="Creating account…";
     const values=Object.fromEntries(new FormData(form).entries());
     try{
       const {data,error}=await db.functions.invoke("admin-create-user",{body:values});
-      if(error)throw error;
+      if(error)throw new Error(data?.error||error.message||"Unable to create account.");
       if(data?.error)throw new Error(data.error);
-      close();show(data?.message||"Invitation sent successfully.");await loadUsers();
-    }catch(error){show(error.message||"Unable to create user.","error");}
-    finally{submit.disabled=false;submit.textContent="Send invitation";}
+      close();show(data?.message||"Account created successfully. No invitation email was sent.");await loadUsers();
+    }catch(error){show(error.message||"Unable to create account.","error");}
+    finally{submit.disabled=false;submit.textContent="Create account";}
   });
 
   (async()=>{
