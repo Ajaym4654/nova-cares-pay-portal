@@ -12,3 +12,12 @@
   .modal form{gap:11px}
   .modal-actions{padding-top:12px}
 }
+
+/* User list pagination */
+.users-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 4px;margin-top:4px}
+.pagination-info,.page-number{font-size:11px;color:#718194}
+.pagination-controls{display:flex;align-items:center;gap:10px}
+.page-btn{border:1px solid #dfe6ec;background:#fff;color:#405469;border-radius:7px;padding:8px 12px;font:600 11px "DM Sans",sans-serif;cursor:pointer}
+.page-btn:hover:not(:disabled){border-color:#9eafbd;background:#f8fafb}
+.page-btn:disabled{opacity:.42;cursor:not-allowed}
+@media(max-width:520px){.users-pagination{align-items:flex-start;flex-direction:column}.pagination-controls{width:100%;justify-content:space-between}}
