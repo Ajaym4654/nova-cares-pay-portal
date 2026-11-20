@@ -10,7 +10,7 @@ document.getElementById("open-create").addEventListener("click",()=>{hide();clos
 document.getElementById("close-create").addEventListener("click",close);document.getElementById("cancel-create").addEventListener("click",close);modal.addEventListener("click",e=>{if(e.target===modal)close();});
 const edgeError=async(error,data)=>{if(data?.error)return data.error;try{const response=error?.context;if(response&&typeof response.clone==="function"){const payload=await response.clone().json();if(payload?.error)return payload.error;if(payload?.message)return payload.message;}}catch{}return error?.message||"Edge Function request failed. Check Supabase Function Logs.";};
 const token=async()=>{const {data,error}=await db.auth.refreshSession();if(error||!data.session?.access_token)throw new Error("Session expired. Sign in again.");return data.session.access_token;};
-const manage=async payload=>{const t=await token(),{data,error}=await db.functions.invoke("manage-user",{body:payload,headers:{Authorization:"Bearer "+t}});if(error)throw new Error(await edgeError(error,data));if(data?.error)throw new Error(data.error);return data;};
+const manage=async payload=>{const t=await token(),{data,error}=await db.functions.invoke("rapid-function",{body:payload,headers:{Authorization:"Bearer "+t}});if(error)throw new Error(await edgeError(error,data));if(data?.error)throw new Error(data.error);return data;};
 async function loadUsers(){
 body.innerHTML='<tr><td colspan="6" class="table-empty">Loading users…</td></tr>';
 let q=db.from("profiles").select("id,full_name,email,login_id,phone,role,is_active,created_at").order("created_at",{ascending:false});if(currentUser.role==="admin")q=q.eq("role","nurse");
