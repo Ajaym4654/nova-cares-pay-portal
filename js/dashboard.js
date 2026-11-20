@@ -12,7 +12,7 @@
   const db=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
   (async()=>{
     const {data:{session}}=await db.auth.getSession();if(!session){location.replace("/");return;}
-    const {data:p,error}=await db.from("profiles").select("id,full_name,email,login_id,phone,role,is_active,created_at,avatar_url").eq("id",session.user.id).single();
+    const {data:p,error}=await db.from("profiles").select("id,full_name,email,login_id,phone,role,is_active,created_at,avatar_url,job_title").eq("id",session.user.id).single();
     if(error||!p||!p.is_active){await db.auth.signOut();location.replace("/");return;}
     const role=p.role,isNurse=role==="nurse";
     document.getElementById("greeting").textContent="Welcome back, "+(p.full_name||"there");
@@ -34,7 +34,7 @@
       if(error)throw new Error("Unable to load nurse account summary: "+error.message);
       nurseCount=count??0;
     }
-    setStats([{label:"Account role",value:role==="super_admin"?"Super Admin":role==="admin"?"Admin":"Nurse",icon:"◈",note:"Access-controlled account"}]);
+    setStats([{label:isNurse?"Position / Designation":"Account role",value:isNurse?(p.job_title||"Nurse"):(role==="super_admin"?"Super Admin":"Admin"),icon:"◈",note:isNurse?"Your employee designation":"Access-controlled account"}]);
     async function renderPaystubs(){
       document.getElementById("section-title").textContent="My paystubs";document.getElementById("section-subtitle").textContent="View and securely download your weekly pay documents.";
       root.innerHTML='<div class="loading">Loading your paystubs…</div>';
