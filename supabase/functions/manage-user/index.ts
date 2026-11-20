@@ -13,7 +13,7 @@ Deno.serve(async req=>{
  if(authErr||!auth.user)return reply({error:"Session expired. Sign in again."},401);
  const {data:actor,error:actorErr}=await db.from("profiles").select("id,role,is_active").eq("id",auth.user.id).maybeSingle();
  if(actorErr||!actor?.is_active||!["admin","super_admin"].includes(actor.role))return reply({error:"Administrator access required."},403);
- let input:{action?:string;user_id?:string;full_name?:string;email?:string;phone?:string;password?:string};
+ let input:{action?:string;user_id?:string;full_name?:string;email?:string;phone?:string;password?:string;job_title?:string};
  try{input=await req.json();}catch{return reply({error:"Invalid request."},400);}
  if(!input.user_id)return reply({error:"User ID is required."},400);
  const {data:target,error:targetErr}=await db.from("profiles").select("id,role,is_active").eq("id",input.user_id).maybeSingle();
@@ -29,12 +29,12 @@ Deno.serve(async req=>{
   return reply({success:true});
  }
  if(input.action==="update_profile"){
-  const full_name=String(input.full_name||"").trim(),email=String(input.email||"").trim().toLowerCase(),phone=String(input.phone||"").trim();
+  const full_name=String(input.full_name||"").trim(),email=String(input.email||"").trim().toLowerCase(),phone=String(input.phone||"").trim(),job_title=String(input.job_title||"").trim().slice(0,40)||null;
   if(!full_name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return reply({error:"Enter a valid name and email address."},400);
   const {data:old}=await db.from("profiles").select("full_name,email").eq("id",target.id).single();
   const {error:authUpdate}=await db.auth.admin.updateUserById(target.id,{email,email_confirm:true,user_metadata:{full_name}});
   if(authUpdate)return reply({error:authUpdate.message},400);
-  const {error:profileUpdate}=await db.from("profiles").update({full_name,email,login_id:email,phone:phone||null,updated_at:new Date().toISOString()}).eq("id",target.id);
+  const {error:profileUpdate}=await db.from("profiles").update({full_name,email,login_id:email,phone:phone||null,job_title:target.role==="nurse"?job_title:null,updated_at:new Date().toISOString()}).eq("id",target.id);
   if(profileUpdate){await db.auth.admin.updateUserById(target.id,{email:old.email,email_confirm:true,user_metadata:{full_name:old.full_name}});return reply({error:profileUpdate.message},400);}
   return reply({success:true});
  }
