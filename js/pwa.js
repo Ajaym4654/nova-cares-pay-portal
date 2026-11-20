@@ -30,6 +30,7 @@
 
   const style = document.createElement("style");
   style.textContent = `
+    .nova-install-banner[hidden]{display:none!important}
     .nova-install-banner{position:fixed;z-index:9999;left:16px;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));max-width:520px;margin:auto;display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border:1px solid #dce5ed;border-radius:14px;box-shadow:0 12px 36px #142b4526;font-family:Arial,sans-serif;color:#172c43}
     .nova-install-banner img{flex:0 0 42px;border-radius:10px}
     .nova-install-copy{min-width:0;flex:1;display:grid;gap:3px}
@@ -40,6 +41,8 @@
     @media(min-width:700px){.nova-install-banner{left:auto;right:22px;bottom:22px}}
   `;
   document.head.appendChild(style);
+  // Android install UI appears only when the browser exposes its native install prompt.
+  if (!isIOS) banner.hidden = true;
   document.body.appendChild(banner);
 
   const installButton = banner.querySelector(".nova-install-action");
@@ -63,13 +66,11 @@
     event.preventDefault();
     deferredPrompt = event;
     installButton.textContent = "Install";
+    banner.hidden = false;
   });
 
   installButton.addEventListener("click", async () => {
-    if (!deferredPrompt) {
-      window.alert("Open this portal in Chrome or your phone's browser menu and choose Install app or Add to Home Screen.");
-      return;
-    }
+    if (!deferredPrompt) return;
     deferredPrompt.prompt();
     await deferredPrompt.userChoice;
     deferredPrompt = null;
