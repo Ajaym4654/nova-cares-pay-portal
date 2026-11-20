@@ -1,0 +1,24 @@
+{
+  "id": "/",
+  "name": "Nova Cares Payroll Portal",
+  "short_name": "Nova Payroll",
+  "description": "Secure employee payroll and paystub portal for Nova Cares Staffing LLC.",
+  "start_url": "/index.html?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "portrait-primary",
+  "background_color": "#f5f8fb",
+  "theme_color": "#142b45",
+  "icons": [
+    {
+      "src": "/icons/nova-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
