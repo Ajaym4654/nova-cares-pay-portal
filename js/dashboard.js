@@ -32,7 +32,7 @@
       if(error)throw new Error("Unable to load nurse account summary: "+error.message);
       nurseCount=count??0;
     }
-    setStats([{label:isNurse?"Available paystubs":"Nurse accounts",value:isNurse?paystubCount:nurseCount,icon:"♙",note:isNurse?"Documents in your account":"Visible under your permissions"},{label:"Account role",value:role==="super_admin"?"Super Admin":role==="admin"?"Admin":"Nurse",icon:"◈",note:"Access-controlled account"}]);
+    setStats([{label:"Account role",value:role==="super_admin"?"Super Admin":role==="admin"?"Admin":"Nurse",icon:"◈",note:"Access-controlled account"}]);
     async function renderPaystubs(){
       document.getElementById("section-title").textContent="My paystubs";document.getElementById("section-subtitle").textContent="View and securely download your weekly pay documents.";
       root.innerHTML='<div class="loading">Loading your paystubs…</div>';
