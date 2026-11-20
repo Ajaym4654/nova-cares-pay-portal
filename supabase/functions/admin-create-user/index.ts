@@ -20,17 +20,17 @@ Deno.serve(async req=>{
   const {data:actor,error:actorError}=await adminClient.from("profiles").select("id,role,is_active").eq("id",authData.user.id).maybeSingle();
   if(actorError){console.error("Administrator profile lookup failed:",actorError.message);return reply({error:"Could not verify your administrator profile.",details:actorError.message},500);}
   if(!actor||actor.is_active!==true||!["super_admin","admin"].includes(actor.role))return reply({error:"Only an active Admin or Super Admin can create accounts."},403);
-  let input:{full_name?:string;email?:string;password?:string;phone?:string;role?:string};
+  let input:{full_name?:string;email?:string;password?:string;phone?:string;role?:string;avatar_url?:string};
   try{input=await req.json();}catch{return reply({error:"Invalid request body."},400);}
   const fullName=String(input.full_name||"").trim(),email=String(input.email||"").trim().toLowerCase(),password=String(input.password||""),phone=String(input.phone||"").trim();
-  const role=input.role;
+  const role=input.role,avatarUrl=String(input.avatar_url||"").trim()||null;
   if(actor.role==="admin"&&role!=="nurse")return reply({error:"Admins can create Nurse / Employee accounts only."},403);
   if(actor.role==="super_admin"&&role!=="admin"&&role!=="nurse")return reply({error:"Choose Admin or Nurse / Employee."},400);
   if(!fullName||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return reply({error:"Enter a valid full name and email address."},400);
   if(password.length<8||password.length>72)return reply({error:"Password must be between 8 and 72 characters."},400);
   const {data:created,error:createError}=await adminClient.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{full_name:fullName}});
   if(createError||!created.user){console.error("Auth user creation failed:",createError?.message);return reply({error:createError?.message||"Unable to create account."},400);}
-  const {error:profileError}=await adminClient.from("profiles").insert({id:created.user.id,login_id:email,email,full_name:fullName,phone:phone||null,role,is_active:true,must_change_password:false,created_by:authData.user.id});
+  const {error:profileError}=await adminClient.from("profiles").insert({id:created.user.id,login_id:email,email,full_name:fullName,phone:phone||null,avatar_url:avatarUrl,role,is_active:true,must_change_password:false,created_by:authData.user.id});
   if(profileError){console.error("Profile insert failed; rolling back auth user:",profileError.message);const {error:rollbackError}=await adminClient.auth.admin.deleteUser(created.user.id);if(rollbackError)console.error("Auth rollback failed:",rollbackError.message);return reply({error:profileError.message},400);}
   return reply({success:true,message:"Account created successfully. User can sign in immediately with the password you set."});
 });
