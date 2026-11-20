@@ -12,12 +12,12 @@
   const db=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
   (async()=>{
     const {data:{session}}=await db.auth.getSession();if(!session){location.replace("/");return;}
-    const {data:p,error}=await db.from("profiles").select("id,full_name,email,login_id,phone,role,is_active,created_at").eq("id",session.user.id).single();
+    const {data:p,error}=await db.from("profiles").select("id,full_name,email,login_id,phone,role,is_active,created_at,avatar_url").eq("id",session.user.id).single();
     if(error||!p||!p.is_active){await db.auth.signOut();location.replace("/");return;}
     const role=p.role,isNurse=role==="nurse";
     document.getElementById("greeting").textContent="Welcome back, "+(p.full_name||"there");
     document.getElementById("role-label").textContent=role.replace("_"," ").toUpperCase()+" PORTAL";
-    document.getElementById("avatar").textContent=(p.full_name||"NC").split(" ").map(s=>s[0]).slice(0,2).join("").toUpperCase();
+    const avatar=document.getElementById("avatar");avatar.innerHTML=p.avatar_url?'<img src="'+safe(p.avatar_url)+'" alt="Profile photo">':(p.full_name||"NC").split(" ").map(s=>s[0]).slice(0,2).join("").toUpperCase();
     const menus=role==="super_admin"?["Dashboard","User management","Paystubs","Login activity","Audit logs","Profile"]:role==="admin"?["Dashboard","User management","Paystubs","Profile"]:["Dashboard","My paystubs","Profile"];
     nav.innerHTML=menus.map((m,i)=>'<a href="#" class="'+(i===0?"active":"")+'" data-menu="'+m+'"><span class="nav-icon">'+(icon[m]||"•")+'</span>'+m+'</a>').join("");
     document.getElementById("section-title").textContent=isNurse?"My paystubs":"Portal overview";
@@ -32,7 +32,7 @@
       if(error)throw new Error("Unable to load nurse account summary: "+error.message);
       nurseCount=count??0;
     }
-    setStats([{label:isNurse?"Available paystubs":"Nurse accounts",value:isNurse?paystubCount:nurseCount,icon:"♙",note:isNurse?"Documents in your account":"Visible under your permissions"},{label:"Paystubs",value:paystubCount,icon:"▤",note:"Uploaded payroll documents"},{label:"Account role",value:role==="super_admin"?"Super Admin":role==="admin"?"Admin":"Nurse",icon:"◈",note:"Access-controlled account"}]);
+    setStats([{label:isNurse?"Available paystubs":"Nurse accounts",value:isNurse?paystubCount:nurseCount,icon:"♙",note:isNurse?"Documents in your account":"Visible under your permissions"},{label:"Account role",value:role==="super_admin"?"Super Admin":role==="admin"?"Admin":"Nurse",icon:"◈",note:"Access-controlled account"}]);
     async function renderPaystubs(){
       document.getElementById("section-title").textContent="My paystubs";document.getElementById("section-subtitle").textContent="View and securely download your weekly pay documents.";
       root.innerHTML='<div class="loading">Loading your paystubs…</div>';
@@ -44,7 +44,7 @@
     }
     function renderProfile(){
       document.getElementById("section-title").textContent="My profile";document.getElementById("section-subtitle").textContent="Your account information.";
-      root.innerHTML='<div class="facility-list"><article class="facility-card"><h3>Personal details</h3><p><b>Full name:</b> '+safe(p.full_name)+'</p><p><b>Email:</b> '+safe(p.email||session.user.email)+'</p><p><b>Phone:</b> '+safe(p.phone||"Not provided")+'</p></article><article class="facility-card"><h3>Portal access</h3><p><b>Login ID:</b> '+safe(p.login_id||p.email||"—")+'</p><p><b>Role:</b> '+safe(role.replace("_"," "))+'</p><p><b>Account status:</b> Active</p></article></div><p style="font-size:11px;color:#7a8998;margin-top:16px">To update your personal details, please contact your Nova Cares administrator.</p>';
+      root.innerHTML='<div class="facility-list"><article class="facility-card"><div class="profile-photo-large">'+(p.avatar_url?'<img src="'+safe(p.avatar_url)+'" alt="Profile photo">':'<span>'+safe((p.full_name||"NC").split(" ").map(s=>s[0]).slice(0,2).join("").toUpperCase())+'</span>')+'</div><h3>Personal details</h3><p><b>Full name:</b> '+safe(p.full_name)+'</p><p><b>Email:</b> '+safe(p.email||session.user.email)+'</p><p><b>Phone:</b> '+safe(p.phone||"Not provided")+'</p></article><article class="facility-card"><h3>Portal access</h3><p><b>Login ID:</b> '+safe(p.login_id||p.email||"—")+'</p><p><b>Role:</b> '+safe(role.replace("_"," "))+'</p><p><b>Account status:</b> Active</p></article></div><p style="font-size:11px;color:#7a8998;margin-top:16px">To update your personal details, please contact your Nova Cares administrator.</p>';
     }
     async function renderDashboard(){
       document.getElementById("section-title").textContent=isNurse?"My paystubs":"Portal overview";
