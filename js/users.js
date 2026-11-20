@@ -1,6 +1,6 @@
 (() => {
 const cfg=window.NOVA_CONFIG||{},notice=document.getElementById("notice"),body=document.getElementById("users-body"),modal=document.getElementById("create-modal"),form=document.getElementById("create-form"),roleSelect=document.getElementById("account-role");
-let db,currentUser;
+let db,currentUser,currentUsers=[],currentPage=1;const PAGE_SIZE=20;
 const show=(m,t="success")=>{notice.textContent=m;notice.className="user-alert show "+t;},hide=()=>{notice.textContent="";notice.className="user-alert";};
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 document.getElementById("today").textContent=new Intl.DateTimeFormat(undefined,{weekday:"short",month:"short",day:"numeric",year:"numeric"}).format(new Date());
@@ -14,16 +14,27 @@ const manage=async payload=>{const t=await token(),{data,error}=await db.functio
 async function loadUsers(){
 body.innerHTML='<tr><td colspan="6" class="table-empty">Loading users…</td></tr>';
 let q=db.from("profiles").select("id,full_name,email,login_id,phone,role,is_active,created_at").order("created_at",{ascending:false});if(currentUser.role==="admin")q=q.eq("role","nurse");
-const {data,error}=await q;if(error)throw error;document.getElementById("user-count").textContent=data.length+(currentUser.role==="admin"?" nurse accounts":" accounts");
-if(!data.length){body.innerHTML='<tr><td colspan="6" class="table-empty">No accounts found yet.</td></tr>';return;}
-body.innerHTML=data.map(u=>`<tr><td><button class="row-action" data-action="view-paystubs" data-id="${esc(u.id)}" style="font-weight:700">${esc(u.full_name)}</button></td><td>${esc(u.email||u.login_id)}</td><td><span class="role-pill">${esc(u.role.replace("_"," "))}</span></td><td><span class="status-pill ${u.is_active?"active":"inactive"}">${u.is_active?"Active":"Deleted / Disabled"}</span></td><td>${u.created_at?new Date(u.created_at).toLocaleDateString():"—"}</td><td>${u.id===currentUser.id?'<span class="security-hint">Current account</span>':u.is_active?`<button class="row-action" data-action="edit" data-id="${esc(u.id)}">Edit</button> <button class="row-action" data-action="password" data-id="${esc(u.id)}">Password</button> <button class="row-action" data-action="delete" data-id="${esc(u.id)}">Delete</button>`:'<span class="security-hint">Access disabled</span>'}</td></tr>`).join("");
+const {data,error}=await q;if(error)throw error;currentUsers=data||[];currentPage=1;document.getElementById("user-count").textContent=currentUsers.length+(currentUser.role==="admin"?" nurse accounts":" accounts");renderUsersPage();
+}
+function renderUsersPage(){
+const data=currentUsers,totalPages=Math.max(1,Math.ceil(data.length/PAGE_SIZE));currentPage=Math.min(currentPage,totalPages);
+if(!data.length){body.innerHTML='<tr><td colspan="6" class="table-empty">No accounts found yet.</td></tr>';renderPagination();return;}
+const pageUsers=data.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
+body.innerHTML=pageUsers.map(u=>`<tr><td><button class="row-action" data-action="view-paystubs" data-id="${esc(u.id)}" style="font-weight:700">${esc(u.full_name)}</button></td><td>${esc(u.email||u.login_id)}</td><td><span class="role-pill">${esc(u.role.replace("_"," "))}</span></td><td><span class="status-pill ${u.is_active?"active":"inactive"}">${u.is_active?"Active":"Deleted / Disabled"}</span></td><td>${u.created_at?new Date(u.created_at).toLocaleDateString():"—"}</td><td>${u.id===currentUser.id?'<span class="security-hint">Current account</span>':u.is_active?`<button class="row-action" data-action="edit" data-id="${esc(u.id)}">Edit</button> <button class="row-action" data-action="password" data-id="${esc(u.id)}">Password</button> <button class="row-action" data-action="delete" data-id="${esc(u.id)}">Delete</button>`:'<span class="security-hint">Access disabled</span>'}</td></tr>`).join("");
 body.querySelectorAll("button[data-action]").forEach(btn=>btn.addEventListener("click",async()=>{
-const u=data.find(x=>x.id===btn.dataset.id);if(!u)return;
+const u=currentUsers.find(x=>x.id===btn.dataset.id);if(!u)return;
 if(btn.dataset.action==="view-paystubs"){location.href="/paystubs.html?nurse="+encodeURIComponent(u.id);return;}
 if(btn.dataset.action==="edit"){hide();form.elements.full_name.value=u.full_name||"";form.elements.email.value=u.email||u.login_id||"";form.elements.phone.value=u.phone||"";form.elements.password.value="";roleSelect.value=u.role;roleSelect.disabled=true;document.getElementById("password-field").hidden=true;document.getElementById("role-field").hidden=true;document.getElementById("modal-title").textContent="Edit account details";document.getElementById("submit-create").textContent="Save changes";form.dataset.editId=u.id;modal.hidden=false;return;}
 if(btn.dataset.action==="password"){const p=prompt("Enter a new password (8–72 characters) for "+u.full_name+":");if(p===null)return;if(p.length<8||p.length>72){show("Password must be between 8 and 72 characters.","error");return;}btn.disabled=true;try{await manage({action:"set_password",user_id:u.id,password:p});show("Password updated successfully.");}catch(e){show(e.message,"error");}finally{btn.disabled=false;}return;}
 if(btn.dataset.action==="delete"){if(!confirm("Delete access for "+u.full_name+"? Sign-in will be disabled. Payroll history and audit records will be retained."))return;btn.disabled=true;try{await manage({action:"delete",user_id:u.id});show("Account access deleted. Historical records retained.");await loadUsers();}catch(e){show(e.message,"error");btn.disabled=false;}}
 }));
+renderPagination();
+}
+function renderPagination(){
+const nav=document.getElementById("users-pagination");if(!nav)return;const total=currentUsers.length,totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE)),start=total?((currentPage-1)*PAGE_SIZE+1):0,end=Math.min(currentPage*PAGE_SIZE,total);
+nav.innerHTML=`<span class="pagination-info">Showing ${start}–${end} of ${total}</span><div class="pagination-controls"><button type="button" class="page-btn" id="users-prev" ${currentPage===1?"disabled":""}>Previous</button><span class="page-number">Page ${currentPage} of ${totalPages}</span><button type="button" class="page-btn" id="users-next" ${currentPage>=totalPages?"disabled":""}>Next</button></div>`;
+document.getElementById("users-prev").addEventListener("click",()=>{if(currentPage>1){currentPage--;renderUsersPage();}});
+document.getElementById("users-next").addEventListener("click",()=>{if(currentPage<totalPages){currentPage++;renderUsersPage();}});
 }
 form.addEventListener("submit",async e=>{
 e.preventDefault();hide();const submit=document.getElementById("submit-create");submit.disabled=true;const editing=Boolean(form.dataset.editId);submit.textContent=editing?"Saving…":"Creating account";const v=Object.fromEntries(new FormData(form).entries());delete v.avatar;
