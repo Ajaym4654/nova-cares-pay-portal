@@ -66,9 +66,7 @@
           document.getElementById("greeting").textContent="Welcome back, "+full_name;
           const avatar=document.getElementById("avatar");avatar.innerHTML=avatar_url?'<img src="'+safe(avatar_url)+'" alt="Profile photo">':safe(full_name.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase());
           const spotlight=document.getElementById("dashboard-profile");if(spotlight)spotlight.innerHTML=(avatar_url?'<button type="button" class="dashboard-photo-open" title="Open full-size profile photo"><img src="'+safe(avatar_url)+'" alt="Profile photo"></button>':'<div class="dashboard-photo-fallback">'+safe(full_name.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase())+'</div>')+'<div class="dashboard-profile-copy"><b>'+safe(full_name)+'</b><span>'+safe(role.replace("_"," "))+'</span><small>Nova Cares account</small></div>';
-          report(password?"Profile and password updated successfully.":"Profile updated successfully.","success");profileForm.elements.password.value="";profileForm.elements.confirm_password.value="";
-          profileForm.querySelector('input[name="avatar"]').value="";
-          root.querySelector(".facility-card h3").textContent="Personal details";renderProfile();
+          renderProfile();const freshMessage=root.querySelector("#profile-save-message");if(freshMessage){freshMessage.textContent=password?"Profile and password updated successfully.":"Profile updated successfully.";freshMessage.className="profile-save-message success";}
         }catch(err){report(err.message||"Unable to update your profile.","error");}
         finally{save.disabled=false;save.textContent="Save profile changes";}
       });
