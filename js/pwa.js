@@ -30,7 +30,7 @@
 
   const style = document.createElement("style");
   style.textContent = `
-    .nova-install-banner{position:fixed;z-index:9999;left:16px;right:16px;bottom:16px;max-width:520px;margin:auto;display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border:1px solid #dce5ed;border-radius:14px;box-shadow:0 12px 36px #142b4526;font-family:Arial,sans-serif;color:#172c43}
+    .nova-install-banner{position:fixed;z-index:9999;left:16px;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));max-width:520px;margin:auto;display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border:1px solid #dce5ed;border-radius:14px;box-shadow:0 12px 36px #142b4526;font-family:Arial,sans-serif;color:#172c43}
     .nova-install-banner img{flex:0 0 42px;border-radius:10px}
     .nova-install-copy{min-width:0;flex:1;display:grid;gap:3px}
     .nova-install-copy strong{font-size:13px}
