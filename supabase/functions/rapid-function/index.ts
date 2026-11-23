@@ -12,7 +12,7 @@ Deno.serve(async req=>{
  const {data:auth,error:authErr}=await db.auth.getUser(token);
  if(authErr||!auth.user)return reply({error:"Session expired. Sign in again."},401);
  const {data:actor,error:actorErr}=await db.from("profiles").select("id,role,is_active").eq("id",auth.user.id).maybeSingle();
- if(actorErr||!actor?.is_active||!["admin","super_admin"].includes(actor.role))return reply({error:"Administrator access required."},403);
+ if(actorErr||!actor?.is_active)return reply({error:"Active account required."},403);
  let input:{action?:string;user_id?:string;full_name?:string;email?:string;phone?:string;password?:string;job_title?:string;avatar_url?:string};
 
  try{input=await req.json();}catch{return reply({error:"Invalid request."},400);}
@@ -24,6 +24,7 @@ Deno.serve(async req=>{
   if(error)return reply({error:"Could not record login activity: "+error.message},500);
   return reply({success:true});
  }
+ if(input.action!=="record_login"&&!["admin","super_admin"].includes(actor.role))return reply({error:"Administrator access required."},403);
  if(input.action==="self_update_profile"){
   const full_name=String(input.full_name||"").trim(),phone=String(input.phone||"").trim(),avatar_url=String(input.avatar_url||"").trim()||null;
   if(!full_name||full_name.length>120||phone.length>30)return reply({error:"Enter a valid name and phone number."},400);
