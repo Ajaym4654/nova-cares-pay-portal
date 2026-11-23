@@ -13,8 +13,25 @@ Deno.serve(async req=>{
  if(authErr||!auth.user)return reply({error:"Session expired. Sign in again."},401);
  const {data:actor,error:actorErr}=await db.from("profiles").select("id,role,is_active").eq("id",auth.user.id).maybeSingle();
  if(actorErr||!actor?.is_active||!["admin","super_admin"].includes(actor.role))return reply({error:"Administrator access required."},403);
- let input:{action?:string;user_id?:string;full_name?:string;email?:string;phone?:string;password?:string;job_title?:string};
+ let input:{action?:string;user_id?:string;full_name?:string;email?:string;phone?:string;password?:string;job_title?:string;avatar_url?:string};
+
  try{input=await req.json();}catch{return reply({error:"Invalid request."},400);}
+ if(input.action==="record_login"){
+  if(!actor?.is_active)return reply({error:"Active account required."},403);
+  const forwarded=(req.headers.get("x-forwarded-for")||"").split(",")[0].trim();
+  const realIp=req.headers.get("x-real-ip")||forwarded||null;
+  const {error}=await db.from("login_activity").insert({user_id:auth.user.id,event_type:"login_success",ip_address:realIp,user_agent:req.headers.get("user-agent")||null});
+  if(error)return reply({error:"Could not record login activity: "+error.message},500);
+  return reply({success:true});
+ }
+ if(input.action==="self_update_profile"){
+  const full_name=String(input.full_name||"").trim(),phone=String(input.phone||"").trim(),avatar_url=String(input.avatar_url||"").trim()||null;
+  if(!full_name||full_name.length>120||phone.length>30)return reply({error:"Enter a valid name and phone number."},400);
+  const {error}=await db.from("profiles").update({full_name,phone:phone||null,avatar_url,updated_at:new Date().toISOString()}).eq("id",actor.id);
+  if(error)return reply({error:error.message},400);
+  await db.auth.admin.updateUserById(actor.id,{user_metadata:{...auth.user.user_metadata,full_name}});
+  return reply({success:true});
+ }
  if(!input.user_id)return reply({error:"User ID is required."},400);
  const {data:target,error:targetErr}=await db.from("profiles").select("id,role,is_active").eq("id",input.user_id).maybeSingle();
  if(targetErr||!target)return reply({error:"Account not found."},404);
@@ -39,11 +56,18 @@ Deno.serve(async req=>{
   return reply({success:true});
  }
  if(input.action==="delete"){
-  const {error}=await db.from("profiles").update({is_active:false,updated_at:new Date().toISOString()}).eq("id",target.id);
-  if(error)return reply({error:error.message},400);
-  const {error:banError}=await db.auth.admin.updateUserById(target.id,{ban_duration:"876000h"});
-  if(banError)console.error("Auth ban failed; inactive profile still prevents portal access:",banError.message);
-  return reply({success:true,records_retained:true});
+  const {data:oldProfile,error:oldError}=await db.from("profiles").select("email,login_id").eq("id",target.id).single();
+  if(oldError||!oldProfile)return reply({error:"Unable to load account details."},400);
+  const archivedEmail="archived+"+target.id+"@accounts.novacares.invalid";
+  const {error:profileError}=await db.from("profiles").update({is_active:false,email:archivedEmail,login_id:archivedEmail,updated_at:new Date().toISOString()}).eq("id",target.id);
+  if(profileError)return reply({error:profileError.message},400);
+  const {error:authUpdateError}=await db.auth.admin.updateUserById(target.id,{email:archivedEmail,email_confirm:true,ban_duration:"876000h"});
+  if(authUpdateError){
+   await db.from("profiles").update({email:oldProfile.email,login_id:oldProfile.login_id,is_active:true,updated_at:new Date().toISOString()}).eq("id",target.id);
+   return reply({error:"Could not revoke and release this account email: "+authUpdateError.message},400);
+  }
+  await db.from("audit_logs").insert({actor_id:actor.id,action:"account_archived_email_released",entity_type:"profile",entity_id:target.id,details:{previous_email:oldProfile.email}});
+  return reply({success:true,records_retained:true,email_released:true});
  }
  return reply({error:"Unknown action."},400);
 });
