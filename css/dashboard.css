@@ -59,3 +59,12 @@ nav a.active{box-shadow:inset 3px 0 #4d9a75}
 .login-activity-table td.login-empty{text-align:center;padding:22px;color:#829087}
 @media(max-width:900px){.login-activity-table{min-width:760px}}
 @media(max-width:650px){.login-summary{padding:11px 12px}.login-activity-table{min-width:760px}.login-activity-table th,.login-activity-table td{padding:8px}}
+
+
+.login-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 13px;background:#f8fbf9;border-top:1px solid #e6ece8;color:#718278;font-size:10px}
+.login-pagination>div{display:flex;align-items:center;gap:9px}
+.login-page-number{font-variant-numeric:tabular-nums;white-space:nowrap;color:#52675c}
+.login-page-btn{border:1px solid #d6e2da;border-radius:5px;background:#fff;color:#315f48;padding:6px 10px;font:600 10px "DM Sans",sans-serif;cursor:pointer}
+.login-page-btn:hover:not(:disabled){background:#edf5f0;border-color:#b9d1c1}
+.login-page-btn:disabled{opacity:.42;cursor:not-allowed}
+@media(max-width:500px){.login-pagination{align-items:flex-start;flex-direction:column}.login-pagination>div{width:100%;justify-content:space-between}}
