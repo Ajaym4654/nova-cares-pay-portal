@@ -20,6 +20,7 @@ form.addEventListener("submit",async e=>{
   const {data,error}=await client.auth.signInWithPassword({email,password:pass});if(error)throw error;
   const {data:p,error:pe}=await client.from("profiles").select("role,is_active,must_change_password").eq("id",data.user.id).single();
   if(pe||!p||!p.is_active){await client.auth.signOut();throw new Error("Your portal profile is unavailable or inactive. Contact your administrator.");}
+  try{await client.functions.invoke("rapid-function",{body:{action:"record_login"},headers:{Authorization:"Bearer "+data.session.access_token}});}catch(trackError){console.warn("Login activity could not be recorded:",trackError);}
   location.replace(p.must_change_password?"/change-password.html":"/dashboard.html");
  }catch(err){show(err.message||"Unable to sign in. Please try again.","error");}
  finally{button.disabled=false;button.querySelector("span").textContent="Sign in securely";}
