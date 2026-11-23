@@ -37,6 +37,14 @@ Deno.serve(async req=>{
  if(actor.role==="admin"&&target.role!=="nurse")return reply({error:"Admins can manage Nurse / Employee accounts only."},403);
  if(actor.role==="super_admin"&&!["admin","nurse"].includes(target.role))return reply({error:"This account cannot be managed here."},403);
  if(target.id===actor.id)return reply({error:"You cannot modify your own administrator account here."},403);
+ if(input.action==="promote_to_super_admin"){
+  if(actor.role!=="super_admin")return reply({error:"Only a Super Admin can promote another account."},403);
+  if(!target.is_active||target.role!=="admin")return reply({error:"Only an active Admin account can be promoted."},400);
+  const {error}=await db.from("profiles").update({role:"super_admin",updated_at:new Date().toISOString()}).eq("id",target.id);
+  if(error)return reply({error:error.message},400);
+  await db.from("audit_logs").insert({actor_id:actor.id,action:"admin_promoted_to_super_admin",entity_type:"profile",entity_id:target.id,details:{previous_role:"admin",new_role:"super_admin"}});
+  return reply({success:true,role:"super_admin"});
+ }
  if(input.action==="set_password"){
   const password=String(input.password||"");
   if(password.length<8||password.length>72)return reply({error:"Password must be between 8 and 72 characters."},400);
