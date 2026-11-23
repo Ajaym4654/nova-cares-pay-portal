@@ -13,6 +13,11 @@
   const db=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
   (async()=>{
     const {data:{session}}=await db.auth.getSession();if(!session){location.replace("/");return;}
+    const trackingError=sessionStorage.getItem("nova_login_tracking_error");
+    const trackingSuccess=sessionStorage.getItem("nova_login_tracking_success")==="1";
+    if(trackingError){sessionStorage.removeItem("nova_login_tracking_error");setTimeout(()=>{const note=document.createElement("div");note.className="error-box";note.style.margin="12px 0";note.textContent="Login activity was NOT recorded: "+trackingError+" (Please share this exact message with your portal administrator.)";root.prepend(note);},0);}
+    else if(trackingSuccess){sessionStorage.removeItem("nova_login_tracking_success");setTimeout(()=>{const note=document.createElement("div");note.className="success-box";note.style.margin="12px 0";note.textContent="Login activity recorded successfully.";root.prepend(note);},0);}
+
     const {data:p,error}=await db.from("profiles").select("id,full_name,email,login_id,phone,role,is_active,created_at,avatar_url,job_title").eq("id",session.user.id).single();
     if(error||!p||!p.is_active){await db.auth.signOut();location.replace("/");return;}
     const role=p.role,isNurse=role==="nurse";
