@@ -112,18 +112,6 @@
     nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();navigate(a.dataset.menu);}));
     document.getElementById("logout").addEventListener("click",async()=>{await db.auth.signOut();location.replace("/");});
     await renderDashboard();
-    const trackingError=sessionStorage.getItem("nova_login_tracking_error");
-    const trackingSuccess=sessionStorage.getItem("nova_login_tracking_success")==="1";
-    if(trackingError){
-      sessionStorage.removeItem("nova_login_tracking_error");
-      const note=document.createElement("div");note.className="error-box";note.style.margin="12px 0";
-      note.textContent="Login activity was NOT recorded: "+trackingError+" (Please share this exact message with your portal administrator.)";
-      root.prepend(note);
-    }else if(trackingSuccess){
-      sessionStorage.removeItem("nova_login_tracking_success");
-      const note=document.createElement("div");note.className="success-box";note.style.margin="12px 0";
-      note.textContent="Login activity recording confirmed by server.";
-      root.prepend(note);
-    }
+
   })().catch(e=>{root.innerHTML='<div class="error-box">'+safe(e.message||"Unable to load portal data.")+'</div>';});
 })();
