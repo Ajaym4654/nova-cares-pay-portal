@@ -13,7 +13,7 @@ const token=async()=>{const {data,error}=await db.auth.refreshSession();if(error
 const manage=async payload=>{const t=await token(),{data,error}=await db.functions.invoke("rapid-function",{body:payload,headers:{Authorization:"Bearer "+t}});if(error)throw new Error(await edgeError(error,data));if(data?.error)throw new Error(data.error);return data;};
 async function loadUsers(){
 body.innerHTML='<tr><td colspan="6" class="table-empty">Loading users…</td></tr>';
-let q=db.from("profiles").select("id,full_name,email,login_id,phone,role,is_active,created_at").order("created_at",{ascending:false});if(currentUser.role==="admin")q=q.eq("role","nurse");
+let q=db.from("profiles").select("id,full_name,email,login_id,phone,role,is_active,created_at").eq("is_active",true).order("created_at",{ascending:false});if(currentUser.role==="admin")q=q.eq("role","nurse");
 const {data,error}=await q;if(error)throw error;currentUsers=data||[];currentPage=1;document.getElementById("user-count").textContent=currentUsers.length+(currentUser.role==="admin"?" nurse accounts":" accounts");renderUsersPage();
 }
 function renderUsersPage(){
@@ -26,7 +26,7 @@ const u=currentUsers.find(x=>x.id===btn.dataset.id);if(!u)return;
 if(btn.dataset.action==="view-paystubs"){location.href="/paystubs.html?nurse="+encodeURIComponent(u.id);return;}
 if(btn.dataset.action==="edit"){hide();form.elements.full_name.value=u.full_name||"";form.elements.email.value=u.email||u.login_id||"";form.elements.phone.value=u.phone||"";form.elements.password.value="";roleSelect.value=u.role;roleSelect.disabled=true;document.getElementById("password-field").hidden=true;document.getElementById("role-field").hidden=true;document.getElementById("modal-title").textContent="Edit account details";document.getElementById("submit-create").textContent="Save changes";form.dataset.editId=u.id;modal.hidden=false;return;}
 if(btn.dataset.action==="password"){const p=prompt("Enter a new password (8–72 characters) for "+u.full_name+":");if(p===null)return;if(p.length<8||p.length>72){show("Password must be between 8 and 72 characters.","error");return;}btn.disabled=true;try{await manage({action:"set_password",user_id:u.id,password:p});show("Password updated successfully.");}catch(e){show(e.message,"error");}finally{btn.disabled=false;}return;}
-if(btn.dataset.action==="delete"){if(!confirm("Delete access for "+u.full_name+"? Sign-in will be disabled. Payroll history and audit records will be retained."))return;btn.disabled=true;try{await manage({action:"delete",user_id:u.id});show("Account access deleted. Historical records retained.");await loadUsers();}catch(e){show(e.message,"error");btn.disabled=false;}}
+if(btn.dataset.action==="delete"){if(!confirm("Permanently remove "+u.full_name+" from active accounts? Their login will be revoked and this email can be registered again. Historical payroll/audit records will be retained in an inactive archive."))return;btn.disabled=true;try{await manage({action:"delete",user_id:u.id});show("Account removed. Login access revoked and email released; historical records retained.");await loadUsers();}catch(e){show(e.message,"error");btn.disabled=false;}}
 }));
 renderPagination();
 }
