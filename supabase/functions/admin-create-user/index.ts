@@ -28,6 +28,24 @@ Deno.serve(async req=>{
   if(actor.role==="super_admin"&&role!=="admin"&&role!=="nurse")return reply({error:"Choose Admin or Nurse / Employee."},400);
   if(!fullName||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return reply({error:"Enter a valid full name and email address."},400);
   if(password.length<8||password.length>72)return reply({error:"Password must be between 8 and 72 characters."},400);
+  // Release emails from legacy soft-deleted accounts before provisioning a new account.
+  const {data:authUsers,error:listError}=await adminClient.auth.admin.listUsers({page:1,perPage:1000});
+  if(listError)return reply({error:"Unable to verify whether this email is available: "+listError.message},500);
+  const prior=authUsers.users.find(u=>(u.email||"").toLowerCase()===email);
+  if(prior){
+    const {data:priorProfile}=await adminClient.from("profiles").select("id,is_active,email,login_id").eq("id",prior.id).maybeSingle();
+    if(priorProfile?.is_active)return reply({error:"A user with this email address is already registered."},409);
+    const released="archived+"+prior.id+"@accounts.novacares.invalid";
+    const {error:releaseError}=await adminClient.auth.admin.updateUserById(prior.id,{email:released,email_confirm:true,ban_duration:"876000h"});
+    if(releaseError)return reply({error:"This email belongs to an older disabled account and could not be released: "+releaseError.message},409);
+    if(priorProfile){
+      const {error:archiveError}=await adminClient.from("profiles").update({email:released,login_id:released,is_active:false,updated_at:new Date().toISOString()}).eq("id",prior.id);
+      if(archiveError)return reply({error:"Email was released from authentication but old profile could not be archived: "+archiveError.message},500);
+    }else{
+      const {error:removeError}=await adminClient.auth.admin.deleteUser(prior.id);
+      if(removeError)return reply({error:"Could not clean up an incomplete previous account: "+removeError.message},500);
+    }
+  }
   const {data:created,error:createError}=await adminClient.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{full_name:fullName}});
   if(createError||!created.user){console.error("Auth user creation failed:",createError?.message);return reply({error:createError?.message||"Unable to create account."},400);}
   const {error:profileError}=await adminClient.from("profiles").insert({id:created.user.id,login_id:email,email,full_name:fullName,phone:phone||null,avatar_url:avatarUrl,job_title:role==="nurse"?jobTitle:null,role,is_active:true,must_change_password:false,created_by:authData.user.id});
