@@ -26,6 +26,7 @@ Deno.serve(async req=>{
   const role=input.role,avatarUrl=String(input.avatar_url||"").trim()||null,jobTitle=String(input.job_title||"").trim().slice(0,40)||null;
   if(actor.role==="admin"&&role!=="nurse")return reply({error:"Admins can create Nurse / Employee accounts only."},403);
   if(actor.role==="super_admin"&&!["super_admin","admin","nurse"].includes(role||""))return reply({error:"Choose Super Admin, Admin or Nurse / Employee."},400);
+  if(actor.role!=="super_admin"&&role==="super_admin")return reply({error:"Only a Super Admin can create another Super Admin."},403);
   if(!fullName||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return reply({error:"Enter a valid full name and email address."},400);
   if(password.length<8||password.length>72)return reply({error:"Password must be between 8 and 72 characters."},400);
   // Release emails from legacy soft-deleted accounts before provisioning a new account.
