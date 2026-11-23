@@ -34,11 +34,11 @@ Deno.serve(async req=>{
  if(!input.user_id)return reply({error:"User ID is required."},400);
  const {data:target,error:targetErr}=await db.from("profiles").select("id,role,is_active,email,login_id").eq("id",input.user_id).maybeSingle();
  if(targetErr||!target)return reply({error:"Account not found."},404);
- if(input.action==="delete"){
-  const protectedEmail="ajaym4654@gmail.com";
+ const protectedEmail="ajaym4654@gmail.com";
+ if(["delete","set_password","update_profile","promote_to_super_admin"].includes(input.action)){
   const {data:targetAuth}=await db.auth.admin.getUserById(target.id);
   const targetEmails=[target.email,target.login_id,targetAuth?.user?.email].map(value=>String(value||"").trim().toLowerCase());
-  if(targetEmails.includes(protectedEmail))return reply({error:"This is the Primary Super Admin account and it is permanently protected from deletion."},403);
+  if(targetEmails.includes(protectedEmail))return reply({error:"This Primary Super Admin account is protected. Other administrators cannot delete it, change its password, or modify its account."},403);
  }
  if(actor.role==="admin"&&target.role!=="nurse")return reply({error:"Admins can manage Nurse / Employee accounts only."},403);
  if(actor.role==="super_admin"&&!["admin","nurse"].includes(target.role))return reply({error:"This account cannot be managed here."},403);
