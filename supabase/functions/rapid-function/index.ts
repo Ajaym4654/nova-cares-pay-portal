@@ -18,9 +18,7 @@ Deno.serve(async req=>{
  try{input=await req.json();}catch{return reply({error:"Invalid request."},400);}
  if(input.action==="record_login"){
   if(!actor?.is_active)return reply({error:"Active account required."},403);
-  const forwarded=(req.headers.get("x-forwarded-for")||"").split(",")[0].trim();
-  const realIp=req.headers.get("x-real-ip")||forwarded||null;
-  const {error}=await db.from("login_activity").insert({user_id:auth.user.id,event_type:"login_success",ip_address:realIp,user_agent:req.headers.get("user-agent")||null});
+  const {error}=await db.from("login_activity").insert({user_id:auth.user.id,event_type:"login_success",user_agent:req.headers.get("user-agent")||null});
   if(error)return reply({error:"Could not record login activity: "+error.message},500);
   return reply({success:true});
  }
