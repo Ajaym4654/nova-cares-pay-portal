@@ -22,19 +22,8 @@ form.addEventListener("submit",async e=>{
   if(pe||!p||!p.is_active){await client.auth.signOut();throw new Error("Your portal profile is unavailable or inactive. Contact your administrator.");}
   try{
    const {data:trackData,error:trackError}=await client.functions.invoke("rapid-function",{body:{action:"record_login"}});
-   if(trackError||!trackData?.success){
-    let detail=trackData?.error||trackError?.message||"The tracking function did not confirm the login.";
-    try{const response=trackError?.context;if(response&&typeof response.clone==="function"){const payload=await response.clone().json();detail=payload?.error||payload?.message||detail;}}catch{}
-    console.error("Login activity tracking failed:",trackError||trackData);
-    sessionStorage.setItem("nova_login_tracking_error",detail);
-   }else{
-    sessionStorage.removeItem("nova_login_tracking_error");
-    sessionStorage.setItem("nova_login_tracking_success","1");
-   }
-  }catch(trackError){
-   console.error("Login activity tracking failed:",trackError);
-   sessionStorage.setItem("nova_login_tracking_error",trackError?.message||"Unable to contact the login tracking function.");
-  }
+   if(trackError||!trackData?.success)console.warn("Login activity recording failed. This diagnostic is available only in the browser console.",trackError||trackData);
+  }catch(trackError){console.warn("Login activity recording failed.",trackError);}
   location.replace(p.must_change_password?"/change-password.html":"/dashboard.html");
  }catch(err){show(err.message||"Unable to sign in. Please try again.","error");}
  finally{button.disabled=false;button.querySelector("span").textContent="Sign in securely";}
