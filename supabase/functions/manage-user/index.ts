@@ -44,6 +44,7 @@ Deno.serve(async req=>{
   if(password.length<8||password.length>72)return reply({error:"Password must be between 8 and 72 characters."},400);
   const {error}=await db.auth.admin.updateUserById(target.id,{password});
   if(error)return reply({error:error.message},400);
+  await db.from("audit_logs").insert({actor_id:actor.id,action:"user_password_changed",entity_type:"profile",entity_id:target.id,details:{}});
   return reply({success:true});
  }
  if(input.action==="update_profile"){
@@ -54,6 +55,7 @@ Deno.serve(async req=>{
   if(authUpdate)return reply({error:authUpdate.message},400);
   const {error:profileUpdate}=await db.from("profiles").update({full_name,email,login_id:email,phone:phone||null,job_title:target.role==="nurse"?job_title:null,updated_at:new Date().toISOString()}).eq("id",target.id);
   if(profileUpdate){await db.auth.admin.updateUserById(target.id,{email:old.email,email_confirm:true,user_metadata:{full_name:old.full_name}});return reply({error:profileUpdate.message},400);}
+  await db.from("audit_logs").insert({actor_id:actor.id,action:"user_profile_updated",entity_type:"profile",entity_id:target.id,details:{email}});
   return reply({success:true});
  }
  if(input.action==="delete"){
