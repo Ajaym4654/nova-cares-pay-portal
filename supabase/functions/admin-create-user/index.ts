@@ -50,5 +50,6 @@ Deno.serve(async req=>{
   if(createError||!created.user){console.error("Auth user creation failed:",createError?.message);return reply({error:createError?.message||"Unable to create account."},400);}
   const {error:profileError}=await adminClient.from("profiles").insert({id:created.user.id,login_id:email,email,full_name:fullName,phone:phone||null,avatar_url:avatarUrl,job_title:role==="nurse"?jobTitle:null,role,is_active:true,must_change_password:false,created_by:authData.user.id});
   if(profileError){console.error("Profile insert failed; rolling back auth user:",profileError.message);const {error:rollbackError}=await adminClient.auth.admin.deleteUser(created.user.id);if(rollbackError)console.error("Auth rollback failed:",rollbackError.message);return reply({error:profileError.message},400);}
+  await adminClient.from("audit_logs").insert({actor_id:authData.user.id,action:"user_created",entity_type:"profile",entity_id:created.user.id,details:{email,role}});
   return reply({success:true,message:"Account created successfully. User can sign in immediately with the password you set."});
 });
