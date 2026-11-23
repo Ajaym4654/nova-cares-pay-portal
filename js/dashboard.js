@@ -74,14 +74,22 @@
     }
     async function renderLoginActivity(){
       document.getElementById("section-title").textContent="Login activity";
-      document.getElementById("section-subtitle").textContent="Successful sign-ins, device/browser details and recorded network addresses.";
+      document.getElementById("section-subtitle").textContent="Successful sign-ins by user, time, network and device.";
       root.innerHTML='<div class="loading">Loading login activity…</div>';
-      const {data,error}=await db.from("login_activity").select("id,user_id,event_type,ip_address,user_agent,approximate_location,created_at,profiles(full_name,email,role)").eq("event_type","login_success").order("created_at",{ascending:false}).limit(500);
+      const {data,error}=await db.from("login_activity").select("id,user_id,event_type,ip_address,user_agent,approximate_location,created_at,profiles(full_name,email,role)").eq("event_type","login_success").order("created_at",{ascending:false}).limit(1000);
+      if(error)throw error;
+      const rows=data||[],totals=new Map();
+      rows.forEach(r=>totals.set(r.user_id,(totals.get(r.user_id)||0)+1));
+      root.innerHTML='<div class="facility-list"><article class="facility-card"><h3>Login summary</h3><p>'+totals.size+' users · '+rows.length+' successful logins (latest 1,000)</p></article><article class="facility-card"><div class="table-wrap"><table><thead><tr><th>User</th><th>Login time</th><th>IP address</th><th>Device / browser</th><th>Location</th><th>Logins shown</th></tr></thead><tbody>'+ (rows.length?rows.map(r=>'<tr><td>'+safe(r.profiles?.full_name||r.profiles?.email||"Archived account")+'<br><small>'+safe(r.profiles?.email||"")+'</small></td><td>'+safe(new Date(r.created_at).toLocaleString())+'</td><td>'+safe(r.ip_address||"Not available")+'</td><td>'+safe(r.user_agent||"Not available")+'</td><td>'+safe(r.approximate_location||"Not available")+'</td><td>'+totals.get(r.user_id)+'</td></tr>').join(""):'<tr><td colspan="6">No login events recorded yet. New sign-ins will appear here.</td></tr>')+'</tbody></table></div></article></div>';
+    }
+    async function renderAuditLogs(){
+      document.getElementById("section-title").textContent="Audit logs";
+      document.getElementById("section-subtitle").textContent="Administrator actions and account changes.";
+      root.innerHTML='<div class="loading">Loading audit logs…</div>';
+      const {data,error}=await db.from("audit_logs").select("id,actor_id,action,entity_type,entity_id,details,created_at,profiles(full_name,email,role)").order("created_at",{ascending:false}).limit(500);
       if(error)throw error;
       const rows=data||[];
-      const totals=new Map();rows.forEach(r=>totals.set(r.user_id,(totals.get(r.user_id)||0)+1));
-      if(!rows.length)return empty("No login activity yet","New successful sign-ins will appear here after login tracking is enabled.");
-      root.innerHTML='<div class="facility-list"><article class="facility-card"><h3>Sign-in summary</h3><p>'+totals.size+' users · '+rows.length+' successful logins recorded</p></article><article class="facility-card"><div class="table-wrap"><table><thead><tr><th>User</th><th>When</th><th>IP address</th><th>Browser / device</th><th>Approx. location</th><th>Total logins shown</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+safe(r.profiles?.full_name||r.profiles?.email||"Deleted user")+'<br><small>'+safe(r.profiles?.email||"")+'</small></td><td>'+safe(new Date(r.created_at).toLocaleString())+'</td><td>'+safe(r.ip_address||"Not available")+'</td><td>'+safe(r.user_agent||"Not available")+'</td><td>'+safe(r.approximate_location||"Not available")+'</td><td>'+totals.get(r.user_id)+'</td></tr>').join("")+'</tbody></table></div></article></div>';
+      root.innerHTML='<div class="facility-list"><article class="facility-card"><h3>Audit history</h3><p>'+rows.length+' latest recorded actions</p></article><article class="facility-card"><div class="table-wrap"><table><thead><tr><th>Administrator</th><th>Action</th><th>Record</th><th>Details</th><th>Date / time</th></tr></thead><tbody>'+(rows.length?rows.map(r=>'<tr><td>'+safe(r.profiles?.full_name||r.profiles?.email||"System / archived user")+'</td><td>'+safe(r.action)+'</td><td>'+safe(r.entity_type||"—")+'<br><small>'+safe(r.entity_id||"")+'</small></td><td><code>'+safe(JSON.stringify(r.details||{}))+'</code></td><td>'+safe(new Date(r.created_at).toLocaleString())+'</td></tr>').join(""):'<tr><td colspan="5">No audit events have been recorded yet.</td></tr>')+'</tbody></table></div></article></div>';
     }
     async function renderDashboard(){
       document.getElementById("section-title").textContent=isNurse?"My paystubs":"Portal overview";
@@ -98,7 +106,7 @@
         if(name==="Profile")return renderProfile();
         if(name==="Dashboard")return await renderDashboard();
         if(name==="Login activity")return await renderLoginActivity();
-        if(name==="Audit logs")return empty(name,"Audit log viewer is not enabled yet.");
+        if(name==="Audit logs")return await renderAuditLogs();
       }catch(e){showError(e);}
     }
     nav.querySelectorAll("a").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();navigate(a.dataset.menu);}));
